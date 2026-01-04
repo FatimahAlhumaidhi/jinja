@@ -1449,7 +1449,7 @@ class Template:
         enable_async: bool = False,
     ) -> t.Any:  # it returns a `Template`, but this breaks the sphinx build...
         env = get_spontaneous_environment(
-            type(self.environment),
+            cls.environment_class,  # type: ignore
             block_start_string,
             block_end_string,
             variable_start_string,
@@ -1812,6 +1812,8 @@ class TemplateModule:
             name = repr(self.__name__)
         return f"<{type(self).__name__} {name}>"
 
+class AsyncTemplate(Template):
+    environment_class: type[Environment] = AsyncEnvironment
 
 class TemplateExpression:
     """The :meth:`jinja2.Environment.compile_expression` method returns an
@@ -1929,3 +1931,4 @@ class TemplateStream:
 # hook in default template class.  if anyone reads this comment: ignore that
 # it's possible to use custom templates ;-)
 Environment.template_class = Template
+AsyncEnvironment.template_class = AsyncTemplate

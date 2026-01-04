@@ -191,7 +191,7 @@ class BytecodeCache:
         return bucket
 
     async def get_bucket_async(
-        self, environment: Environment, name: str, filename: str | None, source: str
+        self, environment: "Environment", name: str, filename: str | None, source: str
     ) -> Bucket:
         """Asynchronously return a cache bucket for the given template.  All arguments are
         mandatory but filename may be `None`.
