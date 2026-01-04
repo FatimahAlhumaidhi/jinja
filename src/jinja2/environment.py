@@ -1812,8 +1812,10 @@ class TemplateModule:
             name = repr(self.__name__)
         return f"<{type(self).__name__} {name}>"
 
+
 class AsyncTemplate(Template):
     environment_class: type[Environment] = AsyncEnvironment
+
 
 class TemplateExpression:
     """The :meth:`jinja2.Environment.compile_expression` method returns an
