@@ -548,8 +548,12 @@ class FunctionLoader(BaseLoader):
         self,
         load_func: t.Callable[
             [str],
-            str | tuple[str, str | None, t.Callable[[], bool] | None] | None
-            | t.Awaitable[str | tuple[str, str | None, t.Callable[[], bool] | None] | None],
+            str
+            | tuple[str, str | None, t.Callable[[], bool] | None]
+            | None
+            | t.Awaitable[
+                str | tuple[str, str | None, t.Callable[[], bool] | None] | None
+            ],
         ],
     ) -> None:
         self.load_func = load_func

@@ -1994,7 +1994,7 @@ class CodeGenerator(NodeVisitor):
 
 class AsyncCodeGenerator(CodeGenerator):
     def choose_async(self, async_value: str = "async ", sync_value: str = "") -> str:
-        return async_value # AsyncEnvironemet is always async
+        return async_value  # AsyncEnvironemet is always async
 
     def visit_Extends(self, node: nodes.Extends, frame: Frame) -> None:
         """Calls the extender."""
@@ -2021,7 +2021,9 @@ class AsyncCodeGenerator(CodeGenerator):
             else:
                 self.outdent()
 
-        self.writeline("parent_template = await environment.get_template(", node) # awaitable for AsyncEnvironemet
+        self.writeline(
+            "parent_template = await environment.get_template(", node
+        )  # awaitable for AsyncEnvironemet
         self.visit(node.template, frame)
         self.write(f", {self.name!r})")
         self.writeline("for name, parent_block in parent_template.blocks.items():")
@@ -2052,7 +2054,9 @@ class AsyncCodeGenerator(CodeGenerator):
         elif isinstance(node.template, (nodes.Tuple, nodes.List)):
             func_name = "select_template"
 
-        self.writeline(f"template = await environment.{func_name}(", node) # awaitable for AsyncEnvironemet
+        self.writeline(
+            f"template = await environment.{func_name}(", node
+        )  # awaitable for AsyncEnvironemet
 
         self.visit(node.template, frame)
         self.write(f", {self.name!r})")
@@ -2090,7 +2094,6 @@ class AsyncCodeGenerator(CodeGenerator):
                 "._body_stream:"
             )
             loop_body()
-
 
         if node.ignore_missing:
             self.outdent()

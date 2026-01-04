@@ -16,8 +16,8 @@ from types import CodeType
 from markupsafe import Markup
 
 from . import nodes
-from .compiler import CodeGenerator
 from .compiler import AsyncCodeGenerator
+from .compiler import CodeGenerator
 from .compiler import generate
 from .defaults import BLOCK_END_STRING
 from .defaults import BLOCK_START_STRING
@@ -1381,6 +1381,7 @@ class Environment:
             d = {}
 
         return ChainMap(d, self.globals)
+
 
 class AsyncEnvironment(Environment):
     code_generator_class: type["CodeGenerator"] = AsyncCodeGenerator

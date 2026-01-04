@@ -202,7 +202,6 @@ class BytecodeCache:
         """Put the bucket into the cache."""
         self.dump_bytecode(bucket)
 
-
     async def set_bucket_async(self, bucket: Bucket) -> None:
         """Asynchronously put the bucket into the cache."""
         self.set_bucket(bucket)
