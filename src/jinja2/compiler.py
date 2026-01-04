@@ -1990,3 +1990,107 @@ class CodeGenerator(NodeVisitor):
             self.visit(child, frame)
         frame.eval_ctx.revert(saved_ctx)
         self.writeline(f"context.eval_ctx.revert({old_ctx_name})")
+
+
+class AsyncCodeGenerator(CodeGenerator):
+    def choose_async(self, async_value: str = "async ", sync_value: str = "") -> str:
+        return async_value # AsyncEnvironemet is always async
+
+    def visit_Extends(self, node: nodes.Extends, frame: Frame) -> None:
+        """Calls the extender."""
+        if not frame.toplevel:
+            self.fail("cannot use extend from a non top-level scope", node.lineno)
+
+        # if the number of extends statements in general is zero so
+        # far, we don't have to add a check if something extended
+        # the template before this one.
+        if self.extends_so_far > 0:
+            # if we have a known extends we just add a template runtime
+            # error into the generated code.  We could catch that at compile
+            # time too, but i welcome it not to confuse users by throwing the
+            # same error at different times just "because we can".
+            if not self.has_known_extends:
+                self.writeline("if parent_template is not None:")
+                self.indent()
+            self.writeline('raise TemplateRuntimeError("extended multiple times")')
+
+            # if we have a known extends already we don't need that code here
+            # as we know that the template execution will end here.
+            if self.has_known_extends:
+                raise CompilerExit()
+            else:
+                self.outdent()
+
+        self.writeline("parent_template = await environment.get_template(", node) # awaitable for AsyncEnvironemet
+        self.visit(node.template, frame)
+        self.write(f", {self.name!r})")
+        self.writeline("for name, parent_block in parent_template.blocks.items():")
+        self.indent()
+        self.writeline("context.blocks.setdefault(name, []).append(parent_block)")
+        self.outdent()
+
+        # if this extends statement was in the root level we can take
+        # advantage of that information and simplify the generated code
+        # in the top level from this point onwards
+        if frame.rootlevel:
+            self.has_known_extends = True
+
+        # and now we have one more
+        self.extends_so_far += 1
+
+    def visit_Include(self, node: nodes.Include, frame: Frame) -> None:
+        if node.ignore_missing:
+            self.writeline("try:")
+            self.indent()
+
+        func_name = "get_or_select_template"
+        if isinstance(node.template, nodes.Const):
+            if isinstance(node.template.value, str):
+                func_name = "get_template"
+            elif isinstance(node.template.value, (tuple, list)):
+                func_name = "select_template"
+        elif isinstance(node.template, (nodes.Tuple, nodes.List)):
+            func_name = "select_template"
+
+        self.writeline(f"template = await environment.{func_name}(", node) # awaitable for AsyncEnvironemet
+
+        self.visit(node.template, frame)
+        self.write(f", {self.name!r})")
+        if node.ignore_missing:
+            self.outdent()
+            self.writeline("except TemplateNotFound:")
+            self.indent()
+            self.writeline("pass")
+            self.outdent()
+            self.writeline("else:")
+            self.indent()
+
+        def loop_body() -> None:
+            self.indent()
+            self.simple_write("event", frame)
+            self.outdent()
+
+        if node.with_context:
+            self.writeline(
+                f"gen = template.root_render_func("
+                "template.new_context(context.get_all(), True,"
+                f" {self.dump_local_context(frame)}))"
+            )
+            self.writeline("try:")
+            self.indent()
+            self.writeline(f"{self.choose_async()}for event in gen:")
+            loop_body()
+            self.outdent()
+            self.writeline(
+                f"finally: {self.choose_async('await gen.aclose()', 'gen.close()')}"
+            )
+        else:
+            self.writeline(
+                "for event in (await template._get_default_module_async())"
+                "._body_stream:"
+            )
+            loop_body()
+
+
+        if node.ignore_missing:
+            self.outdent()

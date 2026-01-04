@@ -15,6 +15,7 @@ from markupsafe import EscapeFormatter
 from markupsafe import Markup
 
 from .environment import Environment
+from .environment import AsyncEnvironment
 from .exceptions import SecurityError
 from .runtime import Context
 from .runtime import Undefined
@@ -398,6 +399,8 @@ class SandboxedEnvironment(Environment):
             raise SecurityError(f"{__obj!r} is not safely callable")
         return __context.call(__obj, *args, **kwargs)
 
+class AsyncSandboxedEnvironment(AsyncEnvironment, SandboxedEnvironment):
+    pass
 
 class ImmutableSandboxedEnvironment(SandboxedEnvironment):
     """Works exactly like the regular `SandboxedEnvironment` but does not
